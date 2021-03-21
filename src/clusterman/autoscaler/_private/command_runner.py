@@ -5,6 +5,7 @@ import os
 import subprocess
 import sys
 import time
+import traceback
 import warnings
 from getpass import getuser
 from shlex import quote
@@ -449,6 +450,9 @@ class SSHCommandRunner(CommandRunnerInterface):
                 if is_output_redirected():
                     fail_msg += " See above for the output from the failure."
                 raise click.ClickException(fail_msg) from None
+        except Exception as e:
+            traceback.print_exc()
+            raise e
 
     def run(
             self,

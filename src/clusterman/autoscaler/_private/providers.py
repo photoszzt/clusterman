@@ -15,78 +15,75 @@ _provider_instances = {}
 # Minimal config for compatibility with legacy-style external configs.
 MINIMAL_EXTERNAL_CONFIG = {
     "available_node_types": {
-        "ray.head.default": {},
-        "ray.worker.default": {},
+        "cls.worker.default": {},
     },
-    "head_node_type": "ray.head.default",
-    "head_node": {},
     "worker_nodes": {},
 }
 
 
 def _import_aws(provider_config):
-    from ray.autoscaler._private.aws.node_provider import AWSNodeProvider
+    from clusterman.autoscaler._private.aws.node_provider import AWSNodeProvider
     return AWSNodeProvider
 
 
 def _import_gcp(provider_config):
-    from ray.autoscaler._private.gcp.node_provider import GCPNodeProvider
+    from clusterman.autoscaler._private.gcp.node_provider import GCPNodeProvider
     return GCPNodeProvider
 
 
 def _import_azure(provider_config):
-    from ray.autoscaler._private.azure.node_provider import AzureNodeProvider
+    from clusterman.autoscaler._private.azure.node_provider import AzureNodeProvider
     return AzureNodeProvider
 
 
 def _import_local(provider_config):
     if "coordinator_address" in provider_config:
-        from ray.autoscaler._private.local.coordinator_node_provider import CoordinatorSenderNodeProvider
+        from clusterman.autoscaler._private.local.coordinator_node_provider import CoordinatorSenderNodeProvider
         return CoordinatorSenderNodeProvider
     else:
-        from ray.autoscaler._private.local.node_provider import LocalNodeProvider
+        from clusterman.autoscaler._private.local.node_provider import LocalNodeProvider
         return LocalNodeProvider
 
 
 def _import_kubernetes(provider_config):
-    from ray.autoscaler._private.kubernetes.node_provider import KubernetesNodeProvider
+    from clusterman.autoscaler._private.kubernetes.node_provider import KubernetesNodeProvider
     return KubernetesNodeProvider
 
 
 def _import_staroid(provider_config):
-    from ray.autoscaler._private.staroid.node_provider import StaroidNodeProvider
+    from clusterman.autoscaler._private.staroid.node_provider import StaroidNodeProvider
     return StaroidNodeProvider
 
 
 def _load_local_defaults_config():
-    import ray.autoscaler.local as ray_local
-    return os.path.join(os.path.dirname(ray_local.__file__), "defaults.yaml")
+    import clusterman.autoscaler.local as cls_local
+    return os.path.join(os.path.dirname(cls_local.__file__), "defaults.yaml")
 
 
 def _load_kubernetes_defaults_config():
-    import ray.autoscaler.kubernetes as ray_kubernetes
+    import clusterman.autoscaler.kubernetes as cls_kubernetes
     return os.path.join(
-        os.path.dirname(ray_kubernetes.__file__), "defaults.yaml")
+        os.path.dirname(cls_kubernetes.__file__), "defaults.yaml")
 
 
 def _load_aws_defaults_config():
-    import ray.autoscaler.aws as ray_aws
-    return os.path.join(os.path.dirname(ray_aws.__file__), "defaults.yaml")
+    import clusterman.autoscaler.aws as cls_aws
+    return os.path.join(os.path.dirname(cls_aws.__file__), "defaults.yaml")
 
 
 def _load_gcp_defaults_config():
-    import ray.autoscaler.gcp as ray_gcp
-    return os.path.join(os.path.dirname(ray_gcp.__file__), "defaults.yaml")
+    import clusterman.autoscaler.gcp as cls_gcp
+    return os.path.join(os.path.dirname(cls_gcp.__file__), "defaults.yaml")
 
 
 def _load_azure_defaults_config():
-    import ray.autoscaler.azure as ray_azure
-    return os.path.join(os.path.dirname(ray_azure.__file__), "defaults.yaml")
+    import clusterman.autoscaler.azure as cls_azure
+    return os.path.join(os.path.dirname(cls_azure.__file__), "defaults.yaml")
 
 
 def _load_staroid_defaults_config():
-    import ray.autoscaler.staroid as ray_staroid
-    return os.path.join(os.path.dirname(ray_staroid.__file__), "defaults.yaml")
+    import clusterman.autoscaler.staroid as cls_staroid
+    return os.path.join(os.path.dirname(cls_staroid.__file__), "defaults.yaml")
 
 
 def _import_external(provider_config):

@@ -80,13 +80,14 @@ def create_nodes(config: Dict[str, Any],
     provider.create_node(node_config, node_tags, count)
     start = time.time()
     workers = []
+    prev = start
     with cli_logger.group("Fetching the new worker node"):
         while True:
-            if time.time() - start > 50:
-                cli_logger.abort("Worker fetch timed out.")
-                raise RuntimeError("Failed to create workers")
             nodes = provider.non_terminated_nodes(worker_filter)
-            if len(nodes) == count:
+            cur = time.time()
+            if cur - prev > 50:
+                prev = cur
+            if len(nodes) >= count:
                 workers = nodes
                 break
             time.sleep(POLL_INTERVAL)
@@ -106,6 +107,7 @@ def create_nodes(config: Dict[str, Any],
             setup_commands=config['worker_setup_commands'],
             process_runner=_runner,
             runtime_hash=runtime_hash,
+            is_head_node=False,
             file_mounts_contents_hash=file_mounts_contents_hash,
             rsync_options={
                 "rsync_exclude": config.get("rsync_exclude"),
@@ -202,7 +204,7 @@ def create_or_update_cluster(
     config = _bootstrap_config(config, no_config_cache=no_config_cache)
 
     try_logging_config(config)
-    create_nodes(config, config_file, yes, override_cluster_name)
+    create_nodes(config, yes)
     return config
 
 

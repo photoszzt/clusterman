@@ -12,6 +12,7 @@ NODE_KIND_WORKER = f"{PREFIX}-worker"
 
 NODE_TYPE_LEGACY_WORKER = f"{PREFIX}-legacy-worker-node-type"
 
+TAG_USER_NODE_TYPE = f"{PREFIX}-user-node-type"
 # Tag that reports the current state of the node (e.g. Updating, Up-to-date)
 TAG_NODE_STATUS = f"{PREFIX}-node-status"
 STATUS_UNINITIALIZED = "uninitialized"

@@ -105,78 +105,52 @@ def log_to_cli(config):
 
     with cli_logger.group("{} config", provider_name):
 
-        def same_everywhere(key):
-            return config["head_node"][key] == config["worker_nodes"][key]
-
         def print_info(resource_string,
                        key,
-                       head_src_key,
                        workers_src_key,
                        allowed_tags=["default"],
                        list_value=False):
 
-            head_tags = {}
             workers_tags = {}
 
-            if _log_info[head_src_key] in allowed_tags:
-                head_tags[_log_info[head_src_key]] = True
             if _log_info[workers_src_key] in allowed_tags:
                 workers_tags[_log_info[workers_src_key]] = True
 
-            head_value_str = config["head_node"][key]
+            workers_value_str = config["worker_nodes"][key]
             if list_value:
-                head_value_str = cli_logger.render_list(head_value_str)
+                workers_value_str = cli_logger.render_list(
+                    workers_value_str)
 
-            if same_everywhere(key):
-                cli_logger.labeled_value(  # todo: handle plural vs singular?
-                    resource_string + " (head & workers)",
-                    "{}",
-                    head_value_str,
-                    _tags=head_tags)
-            else:
-                workers_value_str = config["worker_nodes"][key]
-                if list_value:
-                    workers_value_str = cli_logger.render_list(
-                        workers_value_str)
+            cli_logger.labeled_value(
+                resource_string + " (workers)",
+                "{}",
+                workers_value_str,
+                _tags=workers_tags)
 
-                cli_logger.labeled_value(
-                    resource_string + " (head)",
-                    "{}",
-                    head_value_str,
-                    _tags=head_tags)
-                cli_logger.labeled_value(
-                    resource_string + " (workers)",
-                    "{}",
-                    workers_value_str,
-                    _tags=workers_tags)
-
-        tags = {"default": _log_info["head_instance_profile_src"] == "default"}
-        profile_arn = config["head_node"]["IamInstanceProfile"].get("Arn")
+        print(_log_info)
+        tags = {"default": _log_info["worker_instance_profile_src"] == "default"}
+        profile_arn = config["worker_nodes"]["IamInstanceProfile"].get("Arn")
         profile_name = _arn_to_name(profile_arn) \
             if profile_arn \
-            else config["head_node"]["IamInstanceProfile"]["Name"]
+            else config["worker_nodes"]["IamInstanceProfile"]["Name"]
         cli_logger.labeled_value("IAM Profile", "{}", profile_name, _tags=tags)
 
-        if ("KeyName" in config["head_node"]
-                and "KeyName" in config["worker_nodes"]):
-            print_info("EC2 Key pair", "KeyName", "keypair_src", "keypair_src")
+        if "KeyName" in config["worker_nodes"]:
+            print_info("EC2 Key pair", "KeyName", "keypair_src")
 
         print_info(
             "VPC Subnets",
             "SubnetIds",
-            "head_subnet_src",
             "workers_subnet_src",
             list_value=True)
         print_info(
             "EC2 Security groups",
             "SecurityGroupIds",
-            "head_security_group_src",
             "workers_security_group_src",
             list_value=True)
         print_info(
             "EC2 AMI",
             "ImageId",
-            "head_ami_src",
             "workers_ami_src",
             allowed_tags=["dlami"])
 
@@ -208,10 +182,10 @@ def bootstrap_aws(config):
 
 
 def _configure_iam_role(config):
-    if "IamInstanceProfile" in config["head_node"]:
-        _set_config_info(head_instance_profile_src="config")
+    if "IamInstanceProfile" in config["worker_nodes"]:
+        _set_config_info(worker_instance_profile_src="config")
         return config
-    _set_config_info(head_instance_profile_src="default")
+    _set_config_info(worker_instance_profile_src="default")
 
     profile = _get_instance_profile(DEFAULT_RAY_INSTANCE_PROFILE, config)
 
@@ -262,7 +236,7 @@ def _configure_iam_role(config):
         profile.add_role(RoleName=role.name)
         time.sleep(15)  # wait for propagation
 
-    config["head_node"]["IamInstanceProfile"] = {"Arn": profile.arn}
+    config["worker_nodes"]["IamInstanceProfile"] = {"Arn": profile.arn}
 
     return config
 
@@ -275,12 +249,6 @@ def _configure_key_pair(config):
         # UserData, it should be configured via KeyName or
         # else we will risk starting a node that we cannot
         # SSH into:
-
-        if "UserData" not in config["head_node"]:
-            cli_logger.doassert(  # todo: verify schema beforehand?
-                "KeyName" in config["head_node"],
-                "`KeyName` missing for head node.")  # todo: err msg
-            assert "KeyName" in config["head_node"]
 
         if "UserData" not in config["worker_nodes"]:
             cli_logger.doassert(
@@ -344,7 +312,6 @@ def _configure_key_pair(config):
         "Private key file {} not found for {}".format(key_path, key_name)
 
     config["auth"]["ssh_private_key"] = key_path
-    config["head_node"]["KeyName"] = key_name
     config["worker_nodes"]["KeyName"] = key_name
 
     return config
@@ -354,10 +321,9 @@ def _configure_subnet(config):
     ec2 = _resource("ec2", config)
     use_internal_ips = config["provider"].get("use_internal_ips", False)
 
-    # If head or worker security group is specified, filter down to subnets
+    # If security group is specified, filter down to subnets
     # belonging to the same VPC as the security group.
-    sg_ids = (config["head_node"].get("SecurityGroupIds", []) +
-              config["worker_nodes"].get("SecurityGroupIds", []))
+    sg_ids = config["worker_nodes"].get("SecurityGroupIds", [])
     if sg_ids:
         vpc_id_of_sg = _get_vpc_id_of_sg(sg_ids, config)
     else:
@@ -410,12 +376,6 @@ def _configure_subnet(config):
                 format(config["provider"]["availability_zone"]))
 
     subnet_ids = [s.subnet_id for s in subnets]
-    if "SubnetIds" not in config["head_node"]:
-        _set_config_info(head_subnet_src="default")
-        config["head_node"]["SubnetIds"] = subnet_ids
-    else:
-        _set_config_info(head_subnet_src="config")
-
     if "SubnetIds" not in config["worker_nodes"]:
         _set_config_info(workers_subnet_src="default")
         config["worker_nodes"]["SubnetIds"] = subnet_ids
@@ -454,8 +414,7 @@ def _get_vpc_id_of_sg(sg_ids: List[str], config: Dict[str, Any]) -> str:
 
 
 def _configure_security_group(config):
-    _set_config_info(
-        head_security_group_src="config", workers_security_group_src="config")
+    _set_config_info(workers_security_group_src="config")
 
     node_types_to_configure = [
         node_type for node_type, config_key in NODE_KIND_CONFIG_KEYS.items()
@@ -478,7 +437,7 @@ def _configure_security_group(config):
 def _check_ami(config):
     """Provide helpful message for missing ImageId for node configuration."""
 
-    _set_config_info(head_ami_src="config", workers_ami_src="config")
+    _set_config_info(workers_ami_src="config")
 
     region = config["provider"]["region"]
     default_ami = DEFAULT_AMI.get(region)
@@ -598,8 +557,6 @@ def _upsert_security_group_rules(conf, security_groups):
     sgids = {sg.id for sg in security_groups.values()}
 
     # Update sgids to include user-specified security groups.
-    # This is necessary if the user specifies the head node type's security
-    # groups but not the worker's, or vice-versa.
     for node_type in NODE_KIND_CONFIG_KEYS.values():
         sgids.update(conf[node_type].get("SecurityGroupIds", []))
 

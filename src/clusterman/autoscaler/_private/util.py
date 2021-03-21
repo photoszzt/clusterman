@@ -90,7 +90,7 @@ def prepare_config(config: Dict[str, Any]) -> Dict[str, Any]:
     with_defaults = fillout_defaults(config)
     merge_setup_commands(with_defaults)
     validate_docker_config(with_defaults)
-    fill_node_type_max_workers(with_defaults)
+    fill_node_type_num_workers(with_defaults)
     return with_defaults
 
 
@@ -132,8 +132,8 @@ def merge_legacy_yaml_with_defaults(
                    "https://docs.ray.io/en/master/cluster/config.html"
                    "#full-configuration")
 
-    assert len(merged_config["available_node_types"].keys()) == 2
-    default_worker_type = merged_config["available_node_types"].keys().pop()
+    assert len(merged_config["available_node_types"].keys()) == 1
+    default_worker_type = set(merged_config["available_node_types"].keys()).pop()
 
     if merged_config["worker_nodes"]:
         # User specified a worker node in legacy config.
@@ -141,8 +141,7 @@ def merge_legacy_yaml_with_defaults(
         worker_node_info = {
             "node_config": merged_config["worker_nodes"],
             "resources": merged_config["worker_nodes"].get("resources") or {},
-            "min_workers": merged_config.get("min_workers", 0),
-            "max_workers": merged_config["max_workers"],
+            "num_workers": merged_config["num_workers"],
         }
     else:
         # Use default data for the workers' node type.
@@ -166,14 +165,13 @@ def merge_setup_commands(config):
     return config
 
 
-def fill_node_type_max_workers(config):
-    """Sets default per-node max workers to global max_workers.
-    This equivalent to setting the default per-node max workers to infinity,
-    with the only upper constraint coming from the global max_workers.
+def fill_node_type_num_workers(config):
+    """Sets default per-node num workers to global num_workers.
+    This equivalent to setting the default per-node num workers to infinity,
+    with the only upper constraint coming from the global num_workers.
     """
-    assert "max_workers" in config, "Global max workers should be set."
     for node_type in config["available_node_types"].values():
-        node_type.setdefault("max_workers", config["max_workers"])
+        node_type.setdefault("num_workers", config["num_workers"])
 
 
 def hash_launch_conf(node_conf, auth):

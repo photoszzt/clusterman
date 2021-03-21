@@ -23,7 +23,7 @@
             "description": "A unique identifier for the head node and workers of this cluster.",
             "type": "string"
         },
-        "workers": {
+        "num_workers": {
             "description": "The number of workers nodes to launch.",
             "type": "integer",
             "minimum": 1
@@ -329,8 +329,7 @@
                            "type": "object",
                            "description": "Provider-specific config for the node, e.g. instance type."
                        },
-                       "min_workers": {"type": "integer"},
-                       "max_workers": {"type": "integer"},
+                       "num_workers": {"type": "integer"},
                        "resources": {
 						   "patternProperties": {
 							   ".*":{

@@ -20,10 +20,10 @@ import urllib
 
 import click
 
-import clusterman
 from clusterman.autoscaler._private.cli_logger import cli_logger
 from clusterman.autoscaler._private.commands import create_or_update_cluster, teardown_cluster
 from clusterman.autoscaler._private.constants import LOGGER_FORMAT, LOGGER_FORMAT_HELP, LOGGER_LEVEL, LOGGER_LEVEL_HELP
+from clusterman.cluster_logging import setup_logger
 
 logger = logging.getLogger(__name__)
 
@@ -73,7 +73,7 @@ def add_click_options(options):
 @click.version_option()
 def cli(logging_level, logging_format):
     level = logging.getLevelName(logging_level.upper())
-    clusterman.cluster_logging.setup_logger(level, logging_format)
+    setup_logger(level, logging_format)
     cli_logger.set_format(format_tmpl=logging_format)
 
 
@@ -86,15 +86,10 @@ def add_command_alias(command, name, hidden):
 @cli.command()
 @click.argument("cluster_config_file", required=True, type=str)
 @click.option(
-    "--min-workers",
+    "--num-workers",
     required=False,
     type=int,
     help="Override the configured min worker node count for the cluster.")
-@click.option(
-    "--max-workers",
-    required=False,
-    type=int,
-    help="Override the configured max worker node count for the cluster.")
 @click.option(
     "--yes",
     "-y",
@@ -125,7 +120,7 @@ def add_command_alias(command, name, hidden):
           "by default. If your workflow is compatible with normal shells, "
           "this can be disabled for a better user experience."))
 @add_click_options(logging_options)
-def up(cluster_config_file, min_workers, max_workers,
+def up(cluster_config_file, num_workers,
        yes, cluster_name, no_config_cache, redirect_command_output,
        use_login_shells, log_style, log_color, verbose):
     """Create or update a cluster."""
@@ -145,8 +140,7 @@ def up(cluster_config_file, min_workers, max_workers,
                 "Could not download remote cluster configuration file.")
     create_or_update_cluster(
         config_file=cluster_config_file,
-        override_min_workers=min_workers,
-        override_max_workers=max_workers,
+        override_num_workers=num_workers,
         yes=yes,
         override_cluster_name=cluster_name,
         no_config_cache=no_config_cache,
@@ -163,29 +157,18 @@ def up(cluster_config_file, min_workers, max_workers,
     default=False,
     help="Don't ask for confirmation.")
 @click.option(
-    "--workers-only",
-    is_flag=True,
-    default=False,
-    help="Only destroy the workers.")
-@click.option(
     "--cluster-name",
     "-n",
     required=False,
     type=str,
     help="Override the configured cluster name.")
-@click.option(
-    "--keep-min-workers",
-    is_flag=True,
-    default=False,
-    help="Retain the minimal amount of workers specified in the config.")
 @add_click_options(logging_options)
-def down(cluster_config_file, yes, workers_only, cluster_name,
-         keep_min_workers, log_style, log_color, verbose):
+def down(cluster_config_file, yes, cluster_name,
+         log_style, log_color, verbose):
     """Tear down a Ray cluster."""
     cli_logger.configure(log_style, log_color, verbose)
 
-    teardown_cluster(cluster_config_file, yes, workers_only, cluster_name,
-                     keep_min_workers)
+    teardown_cluster(cluster_config_file, yes, cluster_name)
 
 
 cli.add_command(up)

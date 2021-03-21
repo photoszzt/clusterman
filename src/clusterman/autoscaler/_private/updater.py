@@ -61,7 +61,6 @@ class NodeUpdater:
                  file_mounts,
                  initialization_commands,
                  setup_commands,
-                 ray_start_commands,
                  runtime_hash,
                  file_mounts_contents_hash,
                  is_head_node,
@@ -93,7 +92,6 @@ class NodeUpdater:
 
         self.initialization_commands = initialization_commands
         self.setup_commands = setup_commands
-        self.ray_start_commands = ray_start_commands
         self.node_resources = node_resources
         self.runtime_hash = runtime_hash
         self.file_mounts_contents_hash = file_mounts_contents_hash
@@ -411,7 +409,6 @@ class NodeUpdater:
                                     "{}",
                                     cmd_to_print,
                                     _numbered=("()", i, total))
-
                                 try:
                                     # Runs in the container if docker is in use
                                     self.cmd_runner.run(cmd, run_env="auto")
