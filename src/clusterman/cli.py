@@ -21,7 +21,12 @@ import urllib
 import click
 
 from clusterman.autoscaler._private.cli_logger import cli_logger
-from clusterman.autoscaler._private.commands import create_or_update_cluster, teardown_cluster
+from clusterman.autoscaler._private.commands import (
+    create_or_update_cluster,
+    get_worker_node_ips,
+    rsync,
+    teardown_cluster
+)
 from clusterman.autoscaler._private.constants import LOGGER_FORMAT, LOGGER_FORMAT_HELP, LOGGER_LEVEL, LOGGER_LEVEL_HELP
 from clusterman.cluster_logging import setup_logger
 
@@ -171,8 +176,84 @@ def down(cluster_config_file, yes, cluster_name,
     teardown_cluster(cluster_config_file, yes, cluster_name)
 
 
+@cli.command()
+@click.argument("cluster_config_file", required=True, type=str)
+@click.argument("source", required=False, type=str)
+@click.argument("target", required=False, type=str)
+@click.option(
+    "--cluster-name",
+    "-n",
+    required=False,
+    type=str,
+    help="Override the configured cluster name.")
+@click.option(
+    "--ip-address", required=False, type=str, help="specify ip address")
+@add_click_options(logging_options)
+def rsync_down(cluster_config_file, source, target, cluster_name, ip_address,
+               log_style, log_color, verbose):
+    """Download specific files from a Ray cluster."""
+    cli_logger.configure(log_style, log_color, verbose)
+
+    rsync(
+        cluster_config_file,
+        source,
+        target,
+        cluster_name,
+        down=True,
+        ip_address=ip_address)
+
+
+@cli.command()
+@click.argument("cluster_config_file", required=True, type=str)
+@click.argument("source", required=False, type=str)
+@click.argument("target", required=False, type=str)
+@click.option(
+    "--cluster-name",
+    "-n",
+    required=False,
+    type=str,
+    help="Override the configured cluster name.")
+@click.option(
+    "--all-nodes",
+    "-A",
+    is_flag=True,
+    required=False,
+    help="Upload to all nodes (workers and head).")
+@add_click_options(logging_options)
+def rsync_up(cluster_config_file, source, target, cluster_name, all_nodes,
+             log_style, log_color, verbose):
+    """Upload specific files to a Ray cluster."""
+    cli_logger.configure(log_style, log_color, verbose)
+
+    rsync(
+        cluster_config_file,
+        source,
+        target,
+        cluster_name,
+        down=False,
+        all_nodes=all_nodes)
+
+
+@cli.command()
+@click.argument("cluster_config_file", required=True, type=str)
+@click.option(
+    "--cluster-name",
+    "-n",
+    required=False,
+    type=str,
+    help="Override the configured cluster name.")
+def get_worker_ips(cluster_config_file, cluster_name):
+    """Return the list of worker IPs of a Ray cluster."""
+    worker_ips = get_worker_node_ips(cluster_config_file, cluster_name)
+    click.echo("\n".join(worker_ips))
+
+
 cli.add_command(up)
 cli.add_command(down)
+add_command_alias(down, name="teardown", hidden=True)
+add_command_alias(rsync_down, name="rsync_down", hidden=True)
+add_command_alias(rsync_up, name="rsync_up", hidden=True)
+cli.add_command(get_worker_ips)
 
 
 def main():
