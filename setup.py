@@ -40,7 +40,6 @@ setup(
     zip_safe=False,
     classifiers=[
         # complete classifier list: http://pypi.python.org/pypi?%3Aaction=list_classifiers
-        'Development Status :: 5 - Production/Stable',
         'Intended Audience :: Developers',
         'License :: OSI Approved :: Apache Software License',
         'Operating System :: Unix',
@@ -72,7 +71,8 @@ setup(
     python_requires='>=3.6',
     install_requires=[
         'click',
-        # eg: 'aspectlib==1.1.1', 'six>=1.7',
+        'boto3',
+        'jsonschema',
     ],
     extras_require={
         # eg:
