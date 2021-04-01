@@ -170,7 +170,7 @@ def up(cluster_config_file, num_workers,
 @add_click_options(logging_options)
 def down(cluster_config_file, yes, cluster_name,
          log_style, log_color, verbose):
-    """Tear down a Ray cluster."""
+    """Tear down a cluster."""
     cli_logger.configure(log_style, log_color, verbose)
 
     teardown_cluster(cluster_config_file, yes, cluster_name)
@@ -191,7 +191,7 @@ def down(cluster_config_file, yes, cluster_name,
 @add_click_options(logging_options)
 def rsync_down(cluster_config_file, source, target, cluster_name, ip_address,
                log_style, log_color, verbose):
-    """Download specific files from a Ray cluster."""
+    """Download specific files from a cluster."""
     cli_logger.configure(log_style, log_color, verbose)
 
     rsync(
@@ -222,7 +222,7 @@ def rsync_down(cluster_config_file, source, target, cluster_name, ip_address,
 @add_click_options(logging_options)
 def rsync_up(cluster_config_file, source, target, cluster_name, all_nodes,
              log_style, log_color, verbose):
-    """Upload specific files to a Ray cluster."""
+    """Upload specific files to a cluster."""
     cli_logger.configure(log_style, log_color, verbose)
 
     rsync(
@@ -243,7 +243,7 @@ def rsync_up(cluster_config_file, source, target, cluster_name, all_nodes,
     type=str,
     help="Override the configured cluster name.")
 def get_worker_ips(cluster_config_file, cluster_name):
-    """Return the list of worker IPs of a Ray cluster."""
+    """Return the list of worker IPs of a cluster."""
     worker_ips = get_worker_node_ips(cluster_config_file, cluster_name)
     click.echo("\n".join(worker_ips))
 
