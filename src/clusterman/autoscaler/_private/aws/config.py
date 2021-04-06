@@ -233,6 +233,39 @@ def _configure_iam_role(config):
             PolicyArn="arn:aws:iam::aws:policy/AmazonEC2FullAccess")
         role.attach_policy(
             PolicyArn="arn:aws:iam::aws:policy/AmazonS3FullAccess")
+        role.put_role_policy(
+            PolicyName="pass_iam",
+            PolicyDocument=json.dumps({
+                "Statement": [
+                    {
+                        "Effect": "Allow",
+                        "Action": [
+                            "iam:PassRole",
+                            "iam:ListInstanceProfiles"
+                        ],
+                        "Resource": [
+                            role.arn,
+                            profile.arn,
+                        ]
+                    }
+                ],
+            }))
+        role.put_role_policy(
+            PolicyName="assume_iam",
+            PolicyDocument=json.dumps({
+                "Statement": [
+                    {
+                        "Effect": "Allow",
+                        "Action": [
+                            "iam:AssumeRole",
+                        ],
+                        "Resource": [
+                            role.arn,
+                            profile.arn,
+                        ]
+                    }
+                ],
+            }))
         profile.add_role(RoleName=role.name)
         time.sleep(15)  # wait for propagation
 

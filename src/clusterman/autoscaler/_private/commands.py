@@ -4,7 +4,6 @@ import json
 import logging
 import os
 import subprocess
-import sys
 import tempfile
 import time
 from types import ModuleType
@@ -121,7 +120,6 @@ def create_nodes(config: Dict[str, Any],
         provider.non_terminated_nodes(worker_filter)
         if up.exitcode != 0:
             cli_logger.abort("Fail to setup worker node. ")
-            sys.exit(1)
 
 
 def create_or_update_cluster(
